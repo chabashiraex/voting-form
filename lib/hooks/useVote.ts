@@ -3,9 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Work, Vote } from '@/lib/types'
 
-import { createClient } from '@/lib/supabase/client'
-
-const supabase = createClient()  // ← モジュールレベルで1回だけ初期化
+const supabase = createClient()
 
 export function useVote(periodNo: number) {
   const router = useRouter()
@@ -38,28 +36,12 @@ export function useVote(periodNo: number) {
         .eq('voter_author_no', author.no)
         .eq('is_finalized', true)
         .limit(1)
-        .single()
+        .maybeSingle()
       if (finalizedVote) {
         setIsFinalized(true)
       }
 
-      // 該当期の作品取得
-	const { data: bookData } = await supabase
-	  .from('book_master')
-	  .select('no')
-	  .eq('period_no', periodNo)
-
-	const bookNos = bookData?.map((b) => b.no) ?? []
-	  .from('works')
-	  .select(`
-	    *,
-	    author_master(no, pen_name),
-	    book_master(no, title, period_no)
-	  `)
-	  .in('book_no', bookNos)
-
-  // ===== ここからデバッグログ付きworks取得 =====
-
+      // 該当期のbook_no一覧を取得
       const { data: bookData, error: bookError } = await supabase
         .from('book_master')
         .select('no')
@@ -72,6 +54,7 @@ export function useVote(periodNo: number) {
       const bookNos = bookData?.map((b) => b.no) ?? []
       console.log('bookNos:', bookNos)
 
+      // 該当期の作品取得
       const { data: worksData, error: worksError } = await supabase
         .from('works')
         .select(`
@@ -86,19 +69,18 @@ export function useVote(periodNo: number) {
 
       if (worksData) setWorks(worksData)
 
-      // ===== ここまでデバッグログ付きworks取得 =====
-
-
       // 一時保存データ取得
       const { data: savedVotes } = await supabase
         .from('votes')
         .select('work_no, score')
         .eq('voter_author_no', author.no)
-	if (savedVotes) {
-	  const map: Record<number, number | null> = {}
-	  savedVotes.forEach((v: Pick<Vote, 'work_no' | 'score'>) => { map[v.work_no] = v.score })
-	  setScores(map)
-	}
+      if (savedVotes) {
+        const map: Record<number, number | null> = {}
+        savedVotes.forEach((v: Pick<Vote, 'work_no' | 'score'>) => {
+          map[v.work_no] = v.score
+        })
+        setScores(map)
+      }
 
       setLoading(false)
     }
@@ -110,7 +92,6 @@ export function useVote(periodNo: number) {
     setScores((prev) => ({ ...prev, [workNo]: score }))
   }
 
-  // 一時保存
   const handleSave = async () => {
     if (!myAuthorNo || isFinalized) return
     setSaving(true)
@@ -137,14 +118,12 @@ export function useVote(periodNo: number) {
     }
   }
 
-  // 投票完了（後期ページのみ使用）
   const handleFinalize = async () => {
     if (!myAuthorNo || isFinalized) return
     const confirm = window.confirm('投票を完了しますか？完了後は変更できません。')
     if (!confirm) return
     setSaving(true)
 
-    // まず一時保存と同じデータをupsert
     const upsertData = Object.entries(scores)
       .filter(([, score]) => score !== null)
       .map(([workNo, score]) => ({
