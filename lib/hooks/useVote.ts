@@ -41,15 +41,22 @@ export function useVote(periodNo: number) {
       }
 
       // 該当期の作品取得
-      const { data: worksData } = await supabase
-        .from('works')
-        .select(`
-          *,
-          author_master(no, pen_name),
-          book_master(no, title, period_no, period_master(no, name))
-        `)
-        .eq('book_master.period_no', periodNo)
-      if (worksData) setWorks(worksData)
+	const { data: bookData } = await supabase
+	  .from('book_master')
+	  .select('no')
+	  .eq('period_no', periodNo)
+
+	const bookNos = bookData?.map((b) => b.no) ?? []
+
+	const { data: worksData } = await supabase
+	  .from('works')
+	  .select(`
+	    *,
+	    author_master(no, pen_name),
+	    book_master(no, title, period_no)
+	  `)
+	  .in('book_no', bookNos)
+
 
       // 一時保存データ取得
       const { data: savedVotes } = await supabase
