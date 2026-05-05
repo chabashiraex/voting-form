@@ -56,11 +56,11 @@ export function useVote(periodNo: number) {
         .from('votes')
         .select('work_no, score')
         .eq('voter_author_no', author.no)
-      if (savedVotes) {
-        const map: Record<number, number | null> = {}
-        savedVotes.forEach((v: Vote) => { map[v.work_no] = v.score })
-        setScores(map)
-      }
+	if (savedVotes) {
+	  const map: Record<number, number | null> = {}
+	  savedVotes.forEach((v: Pick<Vote, 'work_no' | 'score'>) => { map[v.work_no] = v.score })
+	  setScores(map)
+	}
 
       setLoading(false)
     }
