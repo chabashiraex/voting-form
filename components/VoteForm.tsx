@@ -38,70 +38,82 @@ export default function VoteForm({ periodNo, isLastPeriod = false }: Props) {
     <div className="space-y-6">
       {/* 作品リスト */}
       <div className="space-y-3">
-        {works.map((work) => {
+        {works.map((work, index) => {
           const isOwn = work.author_no === myAuthorNo
           const currentScore = scores[work.no] ?? null
+          // 最初の作品、または前の作品と収録本が異なる場合にヘッダーを表示
+          const showBookHeader =
+            index === 0 ||
+            works[index - 1].book_no !== work.book_no
 
           return (
-            <div
-              key={work.no}
-              className={`bg-white rounded-xl border p-4 ${isOwn ? 'opacity-50' : ''}`}
-            >
-              <div className="flex items-start justify-between gap-4 flex-wrap">
-                {/* 作品情報 */}
-                <div>
-                  <p className="font-medium">{work.title}</p>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    {work.author_master?.pen_name}
-                  </p>
+            <div key={work.no}>
+              {/* 収録本ヘッダー */}
+              {showBookHeader && (
+                <div className="mt-6 mb-2 first:mt-0">
+                  <h2 className="text-base font-bold text-gray-700 border-b-2 border-blue-500 pb-1">
+                    📖 {work.book_master?.title}
+                  </h2>
                 </div>
-
-                {/* ラジオボタン群 */}
-                <div className="flex items-center gap-1">
-                  {SCORE_OPTIONS.map((opt) => {
-                    const isSelected = opt.isExcluded
-                      ? currentScore === null
-                      : currentScore === opt.value
-
-                    return (
-                      <label
-                        key={opt.value}
-                        className={`flex flex-col items-center cursor-pointer
-                          ${isOwn ? 'pointer-events-none' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name={`work-${work.no}`}
-                          value={opt.value}
-                          checked={isSelected}
-                          disabled={isOwn}
-                          onChange={() => {
-                            if (!opt.isExcluded) handleScore(work.no, opt.value)
-                          }}
-                          className="sr-only"
-                        />
-                        <span className={`w-9 h-9 flex items-center justify-center 
-                          rounded-full text-sm font-medium border-2 transition
-                          ${isOwn
-                            ? 'border-gray-200 text-gray-300 bg-gray-50'
-                            : isSelected
-                              ? opt.isExcluded
-                                ? 'border-gray-400 bg-gray-100 text-gray-600'
-                                : 'border-blue-500 bg-blue-500 text-white'
-                              : 'border-gray-200 text-gray-600 hover:border-blue-300'
-                          }`}
-                        >
-                          {opt.label}
-                        </span>
-                      </label>
-                    )
-                  })}
-                  {/* ラベル行 */}
-                </div>
-              </div>
-              {isOwn && (
-                <p className="text-xs text-gray-400 mt-2">※ 自作品のため投票対象外</p>
               )}
+
+              {/* 作品カード */}
+              <div
+                className={`bg-white rounded-xl border p-4 ${isOwn ? 'opacity-50' : ''}`}
+              >
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div>
+                    <p className="font-medium">{work.title}</p>
+                    <p className="text-sm text-gray-400 mt-0.5">
+                      {work.author_master?.pen_name}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    {SCORE_OPTIONS.map((opt) => {
+                      const isSelected = opt.isExcluded
+                        ? currentScore === null
+                        : currentScore === opt.value
+
+                      return (
+                        <label
+                          key={opt.value}
+                          className={`flex flex-col items-center cursor-pointer
+                            ${isOwn ? 'pointer-events-none' : ''}`}
+                        >
+                          <input
+                            type="radio"
+                            name={`work-${work.no}`}
+                            value={opt.value}
+                            checked={isSelected}
+                            disabled={isOwn}
+                            onChange={() => {
+                              if (!opt.isExcluded) handleScore(work.no, opt.value)
+                            }}
+                            className="sr-only"
+                          />
+                          <span className={`w-9 h-9 flex items-center justify-center 
+                            rounded-full text-sm font-medium border-2 transition
+                            ${isOwn
+                              ? 'border-gray-200 text-gray-300 bg-gray-50'
+                              : isSelected
+                                ? opt.isExcluded
+                                  ? 'border-gray-400 bg-gray-100 text-gray-600'
+                                  : 'border-blue-500 bg-blue-500 text-white'
+                                : 'border-gray-200 text-gray-600 hover:border-blue-300'
+                            }`}
+                          >
+                            {opt.label}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+                {isOwn && (
+                  <p className="text-xs text-gray-400 mt-2">※ 自作品のため投票対象外</p>
+                )}
+              </div>
             </div>
           )
         })}

@@ -63,6 +63,7 @@ export function useVote(periodNo: number) {
           book_master(no, title, period_no)
         `)
         .in('book_no', bookNos)
+        .order('book_no', { ascending: true })
 
       console.log('worksData:', worksData)
       console.log('worksError:', worksError)
