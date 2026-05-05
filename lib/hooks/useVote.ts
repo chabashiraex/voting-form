@@ -47,8 +47,6 @@ export function useVote(periodNo: number) {
 	  .eq('period_no', periodNo)
 
 	const bookNos = bookData?.map((b) => b.no) ?? []
-
-	const { data: worksData } = await supabase
 	  .from('works')
 	  .select(`
 	    *,
