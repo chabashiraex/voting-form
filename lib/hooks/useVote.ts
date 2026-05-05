@@ -57,6 +57,36 @@ export function useVote(periodNo: number) {
 	  `)
 	  .in('book_no', bookNos)
 
+  // ===== ここからデバッグログ付きworks取得 =====
+
+      const { data: bookData, error: bookError } = await supabase
+        .from('book_master')
+        .select('no')
+        .eq('period_no', periodNo)
+
+      console.log('periodNo:', periodNo)
+      console.log('bookData:', bookData)
+      console.log('bookError:', bookError)
+
+      const bookNos = bookData?.map((b) => b.no) ?? []
+      console.log('bookNos:', bookNos)
+
+      const { data: worksData, error: worksError } = await supabase
+        .from('works')
+        .select(`
+          *,
+          author_master(no, pen_name),
+          book_master(no, title, period_no)
+        `)
+        .in('book_no', bookNos)
+
+      console.log('worksData:', worksData)
+      console.log('worksError:', worksError)
+
+      if (worksData) setWorks(worksData)
+
+      // ===== ここまでデバッグログ付きworks取得 =====
+
 
       // 一時保存データ取得
       const { data: savedVotes } = await supabase
