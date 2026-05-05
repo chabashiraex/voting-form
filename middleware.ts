@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           )
           supabaseResponse = NextResponse.next({ request })
@@ -23,25 +23,30 @@ export async function middleware(request: NextRequest) {
     }
   )
 
+  // セッションを自動更新
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 未ログインは / にリダイレクト
-  if (!user && !request.nextUrl.pathname.startsWith('/')) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  // /vote, /complete は認証必須
+  // 未ログインで保護されたページにアクセスした場合はトップへ
   if (!user && (
     request.nextUrl.pathname.startsWith('/vote') ||
     request.nextUrl.pathname.startsWith('/complete') ||
-    request.nextUrl.pathname.startsWith('/select-penname')
+    request.nextUrl.pathname.startsWith('/select-penname') ||
+    request.nextUrl.pathname.startsWith('/results') ||
+    request.nextUrl.pathname.startsWith('/waiting')
   )) {
     return NextResponse.redirect(new URL('/', request.url))
+  }
+
+  // ログイン済みでトップページにアクセスした場合は投票ページへ
+  if (user && request.nextUrl.pathname === '/') {
+    return NextResponse.redirect(new URL('/vote/zenki', request.url))
   }
 
   return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/vote/:path*', '/complete', '/select-penname', '/results', '/waiting'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 }

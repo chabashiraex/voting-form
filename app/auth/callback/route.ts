@@ -1,7 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-// 投票完了人数の定数
 const REQUIRED_VOTERS = 4
 
 export async function GET(request: Request) {
@@ -10,10 +9,11 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.exchangeCodeForSession(code)
+    await supabase.auth.exchangeCodeForSession(code)
+
+    const { data: { user } } = await supabase.auth.getUser()
 
     if (user) {
-      // google_uid紐づけ済みか確認
       const { data: author } = await supabase
         .from('author_master')
         .select('no')
@@ -21,11 +21,9 @@ export async function GET(request: Request) {
         .single()
 
       if (!author) {
-        // 初回 → ペンネーム選択へ
         return NextResponse.redirect(new URL('/select-penname', origin))
       }
 
-      // 自分が投票完了しているか確認
       const { data: myFinalizedVote } = await supabase
         .from('votes')
         .select('is_finalized')
@@ -35,11 +33,9 @@ export async function GET(request: Request) {
         .maybeSingle()
 
       if (!myFinalizedVote) {
-        // 未完了 → 投票ページへ
         return NextResponse.redirect(new URL('/vote/zenki', origin))
       }
 
-      // 全員が投票完了しているか確認
       const { data: finalizedVoters } = await supabase
         .from('votes')
         .select('voter_author_no')
@@ -50,10 +46,8 @@ export async function GET(request: Request) {
       ).size
 
       if (uniqueVoters >= REQUIRED_VOTERS) {
-        // 全員完了 → 結果画面へ
         return NextResponse.redirect(new URL('/results', origin))
       } else {
-        // まだ全員完了していない → 待機画面へ
         return NextResponse.redirect(new URL('/waiting', origin))
       }
     }
