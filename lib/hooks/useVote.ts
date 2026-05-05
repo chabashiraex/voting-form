@@ -3,8 +3,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import type { Work, Vote } from '@/lib/types'
 
+import { createClient } from '@/lib/supabase/client'
+
+const supabase = createClient()  // ← モジュールレベルで1回だけ初期化
+
 export function useVote(periodNo: number) {
-  const supabase = createClient()
   const router = useRouter()
 
   const [works, setWorks] = useState<Work[]>([])
